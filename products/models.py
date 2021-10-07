@@ -1,6 +1,9 @@
-from django.db import models
+from django.db   import models
 
-class Product(models.Model):
+from core.models import TimeStampModel
+
+
+class Product(TimeStampModel):
     name               = models.CharField(max_length=100)
     size_g             = models.CharField(max_length=50)
     size_ml            = models.CharField(max_length=50)
@@ -12,60 +15,48 @@ class Product(models.Model):
     sub_category       = models.ForeignKey('SubCategory', on_delete=models.CASCADE)
     collection         = models.ForeignKey('Collection', on_delete=models.CASCADE)
     is_deleted         = models.BooleanField(default=False)
-    updated_at         = models.DateTimeField(auto_now=True)
-    created_at         = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'products'
 
-class MainCategory(models.Model):
-    name       = models.CharField(max_length=50)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class MainCategory(TimeStampModel):
+    name = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'main_categories'
 
-class SubCategory(models.Model):
+class SubCategory(TimeStampModel):
     name          = models.CharField(max_length=50)
     main_category = models.ForeignKey('MainCategory', on_delete=models.CASCADE)
-    updated_at    = models.DateTimeField(auto_now=True)
-    created_at    = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'sub_categories'
 
-class Collection(models.Model):
-    name       = models.CharField(max_length=50)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+class Collection(TimeStampModel):
+    name = models.CharField(max_length=50)
 
     class Meta:
         db_table = 'collections'
 
-class Scent(models.Model):
-    name              = models.CharField(max_length=50)
-    scent_description = models.TextField()
-    product           = models.ManyToManyField('Product', through='ProductScent')
-    updated_at        = models.DateTimeField(auto_now=True)
-    created_at        = models.DateTimeField(auto_now_add=True)    
+class Scent(TimeStampModel):
+    name        = models.CharField(max_length=50)
+    description = models.TextField()
+    product     = models.ManyToManyField('Product', through='ProductScent')
 
     class Meta:
         db_table = 'scents'
 
-class ProductScent(models.Model):
+class ProductScent(TimeStampModel):
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     scent   = models.ForeignKey('Scent', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'products_scents'
 
-class ProductImage(models.Model):
+class ProductImage(TimeStampModel):
     image_url    = models.URLField()
     is_thumbnail = models.BooleanField(default=False)
     product      = models.ForeignKey('Product', on_delete=models.CASCADE)
-    updated_at   = models.DateTimeField(auto_now=True)
-    created_at   = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'product_images'
