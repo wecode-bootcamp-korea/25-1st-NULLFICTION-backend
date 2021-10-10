@@ -3,12 +3,7 @@ from django.http            import JsonResponse
 from django.db.models       import Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
 
-from products.models        import (
-    Product, 
-    MainCategory, 
-    SubCategory,
-    Scent
-)
+from products.models        import Product
 
 class ProductView(View):
     def get(self, request):
@@ -19,31 +14,23 @@ class ProductView(View):
             scent         = request.GET.get('scent')
             keyword       = request.GET.get('keyword')
 
-
             if main_category:
-                main_category  = MainCategory.objects.get(id=main_category)
-                sub_categories = main_category.subcategory_set.all()
-                for sub_category in sub_categories:
-                    product_list = sub_category.product_set.all()
-                    products     = [product for product in product_list]
+                products = Product.objects.filter(Q(sub_category__main_category__id=main_category))
             
-            elif best_seller:
+            if best_seller:
                 quantity = int(best_seller)
                 products = Product.objects.annotate(quantity_sum=Sum('orderitem__quantity')).order_by('-quantity_sum')[:quantity]
             
-            elif sub_category:
-                sub_category = SubCategory.objects.get(id=sub_category)
-                product_list = sub_category.product_set.all()
-                products     = [product for product in product_list]
+            if sub_category:
+                products = Product.objects.filter(Q(sub_category__id=sub_category))
+ 
+            if scent:
+                products = Product.objects.filter(Q(scent__id=scent))
 
-            elif scent:
-                scent    = Scent.objects.get(id=scent)                
-                products = [product for product in scent.product.all()]
-
-            elif keyword:
+            if keyword:
                 products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
 
-            else:  
+            if main_category and best_seller and sub_category and scent and keyword:
                 products = Product.objects.all()
 
             result = [{
@@ -66,7 +53,7 @@ class ProductView(View):
 
 class ProductDetailView(View):
     def get(self, request):
-        try:
+        try:                
             product = Product.objects.get(id=request.GET.get('id'))
             images  = [product_image.image_url for product_image in product.productimage_set.order_by('-is_thumbnail').all()]
             scent   = [scent.description for scent in product.scent_set.all()]
