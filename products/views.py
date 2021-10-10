@@ -1,8 +1,6 @@
-import json
-
 from django.views           import View
 from django.http            import JsonResponse
-from django.db.models       import Sum
+from django.db.models       import Sum, Q
 from django.core.exceptions import ObjectDoesNotExist
 
 from products.models        import (
@@ -19,6 +17,8 @@ class ProductView(View):
             best_seller   = request.GET.get('best-seller')
             sub_category  = request.GET.get('sub-category')
             scent         = request.GET.get('scent')
+            keyword       = request.GET.get('keyword')
+
 
             if main_category:
                 main_category  = MainCategory.objects.get(id=main_category)
@@ -37,10 +37,13 @@ class ProductView(View):
                 products     = [product for product in product_list]
 
             elif scent:
-                scent    = Scent.objects.get(id=scent)
-                products = [product for product in scent.product.all()]                
+                scent    = Scent.objects.get(id=scent)                
+                products = [product for product in scent.product.all()]
 
-            else:   
+            elif keyword:
+                products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
+
+            else:  
                 products = Product.objects.all()
 
             result = [{
@@ -60,8 +63,6 @@ class ProductView(View):
             return JsonResponse({'message' : 'PRODUCT_NOT_FOUND'}, status=404)
         except ValueError:
             return JsonResponse({'message' : 'VALUE_ERROR'}, status=400)
-        except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
 
 class ProductDetailView(View):
     def get(self, request):
@@ -89,5 +90,3 @@ class ProductDetailView(View):
             return JsonResponse({'message' : 'PRODUCT_NOT_FOUND'}, status=404)
         except ValueError:
             return JsonResponse({'message' : 'VALUE_ERROR'}, status=400)
-        except KeyError:
-            return JsonResponse({'message' : 'KEY_ERROR'}, status=400)
