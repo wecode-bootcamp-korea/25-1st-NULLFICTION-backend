@@ -13,7 +13,7 @@ class ProductView(View):
             sub_category  = request.GET.get('sub-category')
             scent         = request.GET.get('scent')
             keyword       = request.GET.get('keyword')
-
+            
             if main_category:
                 products = Product.objects.filter(Q(sub_category__main_category__id=main_category))
             
@@ -30,7 +30,7 @@ class ProductView(View):
             if keyword:
                 products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
 
-            if main_category and best_seller and sub_category and scent and keyword:
+            if not (main_category or best_seller or sub_category or scent or keyword):
                 products = Product.objects.all()
 
             result = [{
@@ -53,11 +53,10 @@ class ProductView(View):
 
 class ProductDetailView(View):
     def get(self, request):
-        try:                
+        try:
             product = Product.objects.get(id=request.GET.get('id'))
             images  = [product_image.image_url for product_image in product.productimage_set.order_by('-is_thumbnail').all()]
             scent   = [scent.description for scent in product.scent_set.all()]
-
             result = {
                     'id'                 : product.id,
                     'name'               : product.name,
