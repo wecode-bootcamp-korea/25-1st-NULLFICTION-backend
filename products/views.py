@@ -1,36 +1,41 @@
 from django.views           import View
 from django.http            import JsonResponse
 from django.db.models       import Sum, Q
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator  import Paginator
 
 from products.models        import Product
 
 class ProductView(View):
     def get(self, request):
         try:
-            main_category = request.GET.get('main-category')
-            best_seller   = request.GET.get('best-seller')
-            sub_category  = request.GET.get('sub-category')
-            scent         = request.GET.get('scent')
-            keyword       = request.GET.get('keyword')
+            main_category = request.GET.get('main-category', None)
+            best_seller   = request.GET.get('best-seller', None)
+            sub_category  = request.GET.get('sub-category', None)
+            scent         = request.GET.get('scent', None)
+            keyword       = request.GET.get('keyword', None)
+            page_number   = request.GET.get('page', None)
             
-            if main_category:
+            if main_category != None:
                 products = Product.objects.filter(Q(sub_category__main_category__id=main_category))
             
-            if best_seller:
+            if best_seller != None:
                 quantity = int(best_seller)
                 products = Product.objects.annotate(quantity_sum=Sum('orderitem__quantity')).order_by('-quantity_sum')[:quantity]
             
-            if sub_category:
+            if sub_category != None:
                 products = Product.objects.filter(Q(sub_category__id=sub_category))
  
-            if scent:
+            if scent != None:
                 products = Product.objects.filter(Q(scent__id=scent))
 
-            if keyword:
+            if keyword != None:
                 products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
 
-            if not (main_category or best_seller or sub_category or scent or keyword):
+            if page_number != None:
+                paginator = Paginator(Product.objects.all(), 30)
+                products  = paginator.get_page(page_number)
+
+            if (main_category or best_seller or sub_category or scent or keyword or page_number) == None:
                 products = Product.objects.all()
 
             result = [{
@@ -46,15 +51,15 @@ class ProductView(View):
                 } for product in products]
             return JsonResponse({'result': result}, status=200)
 
-        except ObjectDoesNotExist:
+        except Product.DoesNotExist:
             return JsonResponse({'message' : 'PRODUCT_NOT_FOUND'}, status=404)
         except ValueError:
             return JsonResponse({'message' : 'VALUE_ERROR'}, status=400)
 
 class ProductDetailView(View):
-    def get(self, request):
+    def get(self, request, product_id):
         try:
-            product = Product.objects.get(id=request.GET.get('id'))
+            product = Product.objects.get(id=product_id)
             images  = [product_image.image_url for product_image in product.productimage_set.order_by('-is_thumbnail').all()]
             scent   = [scent.description for scent in product.scent_set.all()]
             result = {
