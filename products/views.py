@@ -15,23 +15,23 @@ class ProductView(View):
             keyword       = request.GET.get('keyword', None)
             page_number   = request.GET.get('page', None)
             
-            if main_category != None:
+            if main_category and main_category != None:
                 products = Product.objects.filter(Q(sub_category__main_category__id=main_category))
             
-            if best_seller != None:
+            if best_seller and best_seller != None:
                 quantity = int(best_seller)
                 products = Product.objects.annotate(quantity_sum=Sum('orderitem__quantity')).order_by('-quantity_sum')[:quantity]
             
-            if sub_category != None:
+            if sub_category and sub_category != None:
                 products = Product.objects.filter(Q(sub_category__id=sub_category))
  
-            if scent != None:
+            if scent and scent != None:
                 products = Product.objects.filter(Q(scent__id=scent))
 
-            if keyword != None:
+            if keyword and keyword != None:
                 products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
 
-            if page_number != None:
+            if page_number and page_number != None:
                 paginator = Paginator(Product.objects.all(), 30)
                 products  = paginator.get_page(page_number)
 
@@ -42,6 +42,7 @@ class ProductView(View):
                     'id'          : product.id,
                     'name'        : product.name,
                     'collection'  : product.collection.name,
+                    'sub_category': product.sub_category.name,
                     'size_g'      : product.size_g,
                     'size_ml'     : product.size_ml,
                     'size_oz'     : product.size_oz,
