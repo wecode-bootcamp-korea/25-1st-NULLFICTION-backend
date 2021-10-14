@@ -56,7 +56,6 @@ class CartView(View):
         result = [{
             'cart_id'    : cart.id,
             'name'       : cart.product.name,
-            'collection' : cart.product.collection.name,
             'option'     : cart.option.name,
             'quantity'   : cart.quantity,
             'price'      : cart.product.price,
