@@ -4,6 +4,7 @@ from json.decoder           import JSONDecodeError
 from django.http            import JsonResponse
 from django.views           import View
 from django.core.exceptions import MultipleObjectsReturned
+from django.db              import transaction
 
 from cart.models            import Cart, Option
 from products.models        import Product
@@ -11,7 +12,7 @@ from users.utils            import login_decorator
 
 
 
-class CartsView(View):
+class CartView(View):
     @login_decorator
     def post(self, request):
         try:
@@ -73,13 +74,14 @@ class CartsView(View):
             })
             
         return JsonResponse({'result': result}, status=200)
-
-class CartView(View):   
+    
+    @transaction.atomic
     @login_decorator
-    def patch(self, request, cart_id):
+    def patch(self, request):
         try:
             data     = json.loads(request.body)
             user_id  = request.user.id
+            cart_id  = request.GET.get('id')
             quantity = data['quantity']
 
             if not Cart.objects.filter(id=cart_id, user=user_id).exists():
@@ -94,17 +96,17 @@ class CartView(View):
             return JsonResponse({'quantity': cart.quantity}, status=200)
 
         except MultipleObjectsReturned:
-            return JsonResponse({'message':'MULTIPLE_CART_ERROR'}, status=400)
+            return JsonResponse({'message':'Multiple_Objects_Returned'}, status=400)
 
         except KeyError:
             return JsonResponse({'message':'KEY_ERROR'}, status=400)
 
 
     @login_decorator
-    def delete(self, request, cart_id):
+    def delete(self, request):
         try:
-            user_id=request.user.id
-
+            user_id = request.user.id
+            cart_id = request.GET.get('id')
             if not Cart.objects.filter(id=cart_id, user=user_id).exists():
                 return JsonResponse({'message':'INVALID_CART_ID'}, status=404)
 
@@ -113,4 +115,4 @@ class CartView(View):
             return JsonResponse({'message': 'DELETE'}, status=200)
     
         except MultipleObjectsReturned:
-            return JsonResponse({'message':'MULTIPLE_CART_ERROR'}, status=400)
+            return JsonResponse({'message':'Multiple_Objects_Returned'}, status=400)
