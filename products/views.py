@@ -1,7 +1,6 @@
 from django.views           import View
 from django.http            import JsonResponse
 from django.db.models       import Sum, Q
-from django.core.paginator  import Paginator
 
 from products.models        import Product
 
@@ -13,7 +12,8 @@ class ProductView(View):
             sub_category  = request.GET.get('sub-category', None)
             scent         = request.GET.get('scent', None)
             keyword       = request.GET.get('keyword', None)
-            page_number   = request.GET.get('page', None)
+            offset        = int(request.GET.get('offset', 0))
+            limit         = int(request.GET.get('limit', 100))
             
             if main_category and main_category != None:
                 products = Product.objects.filter(Q(sub_category__main_category__id=main_category))
@@ -31,12 +31,13 @@ class ProductView(View):
             if keyword and keyword != None:
                 products = Product.objects.filter(Q(name__icontains=keyword)|Q(collection__name__icontains=keyword))
 
-            if page_number and page_number != None:
-                paginator = Paginator(Product.objects.all(), 30)
-                products  = paginator.get_page(page_number)
+            if limit > 100:
+                return JsonResponse({'message' : 'TOO_MUCH_LIMIT'}, status=400)
 
-            if (main_category or best_seller or sub_category or scent or keyword or page_number) == None:
-                products = Product.objects.all()
+            limit  = offset + limit
+
+            if (main_category or best_seller or sub_category or scent or keyword) == None:
+                products = Product.objects.all()[offset:limit]
 
             result = [{
                     'id'          : product.id,
