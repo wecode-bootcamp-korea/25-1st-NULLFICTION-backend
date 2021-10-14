@@ -27,6 +27,7 @@ class CartView(View):
             
             if not Option.objects.filter(id=option_id).exists():
                 return JsonResponse({'message':'OPTION_NOT_EXIST'}, status=400)
+                
             if quantity <= 0:
                 return JsonResponse({'message':'QUANTITY_ERROR'}, status=400)
             
@@ -86,6 +87,7 @@ class CartView(View):
 
             if not Cart.objects.filter(id=cart_id, user=user_id).exists():
                 return JsonResponse({'message':'INVALID_CART_ID'}, status=404)
+
             if quantity <= 0:
                 return JsonResponse({'message':'QUANTITY_ERROR'}, status=400)
 
